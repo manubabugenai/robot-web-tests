@@ -46,11 +46,18 @@ jobs:
           fetch-depth: 0
           persist-credentials: false   # Kiro runs in this workspace and must not be able to push
 
-      - name: Stop if the branch already exists
+      - name: Clear an old branch (stop if its pull request is still open)
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           if git ls-remote --exit-code --heads origin "$BRANCH" >/dev/null; then
-            echo "::error::$BRANCH already exists. Close its pull request and delete the branch, then run again."
-            exit 1
+            if [ -n "$(gh pr list --repo "$GITHUB_REPOSITORY" --head "$BRANCH" --state open --json number --jq '.[].number')" ]; then
+              echo "::error::$BRANCH has an open pull request. Merge or close it first, then run again."
+              exit 1
+            fi
+            # Left over from an earlier run whose PR was closed or merged: only ai/<INCIDENT> branches, never main.
+            git push -q "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" --delete "$BRANCH"
+            echo "Deleted the old $BRANCH (its pull request is closed or merged)."
           fi
 
       - uses: actions/setup-python@v5
