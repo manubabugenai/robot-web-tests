@@ -14,6 +14,14 @@ Then run `robot --outputdir results --include <INCIDENT-KEY> tests`. If a test f
 (a wrong locator, a timing problem), fix it and run again, up to 3 times. If it fails because the site really
 behaves differently from the case, leave the test as written and say so.
 
+Commands: the only command you can run is `robot` (or `python -m robot`), as one plain command: no `;`, `&&`,
+`||` or `|`, and no other programs (`echo`, `which`, `grep`, `python -c`, `curl`, `git`, `pip` are blocked).
+Robot Framework, SeleniumLibrary and Chrome are already installed; don't check them. To inspect the live page
+(section ids, link targets), write a temporary `tests/_diag.robot` that logs what you need, run it with `robot`,
+and delete it before you finish.
+
+Locators belong in `resources/*.resource` keywords; tests call keywords, not raw locators.
+
 Never change files outside `tests/` and `resources/`, never delete or weaken existing tests, never use git.
 Finish with:
 FILES CHANGED: <comma-separated paths>
