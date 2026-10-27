@@ -1,0 +1,20 @@
+{
+  "name": "robot-writer",
+  "description": "Adds Robot Framework tests for TQ-approved SIT cases; writes only tests/ and resources/, runs only robot.",
+  "prompt": "file://../prompts/robot-writer.md",
+  "mcpServers": {},
+  "tools": ["read", "write", "shell"],
+  "permissions": {
+    "rules": [
+      { "capability": "fs_write", "match": ["tests/**", "resources/**", "results/**"], "effect": "allow" },
+      { "capability": "shell", "match": ["robot *", "python -m robot *"], "effect": "allow" },
+      { "capability": "shell", "match": ["git *", "curl *", "wget *", "pip *"], "effect": "deny" }
+    ]
+  },
+  "resources": [
+    "file://.kiro/steering/**/*.md",
+    "file://resources/*.resource",
+    "file://tests/*.robot"
+  ],
+  "includeMcpJson": false
+}
