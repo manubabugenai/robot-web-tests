@@ -1,0 +1,151 @@
+# Kiro automates TQ-approved SIT cases and opens a pull request.
+#   Started by the ADK agent after TQ approval (or by hand: Actions > Kiro automate > Run workflow).
+#   Kiro can only write tests/ and resources/ and run robot; it has no git credentials. The guard script
+#   rejects anything else, and only this workflow pushes, to ai/<INCIDENT> only. People review and merge.
+name: Kiro automate
+run-name: ${{ inputs.run_key || format('Kiro automate {0}', inputs.incident) }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      incident:
+        description: "Incident key, e.g. INCIDENT-1 (tests are tagged with it)"
+        required: true
+      review_ticket:
+        description: "The TQ review ticket that was moved to TQ Approved, e.g. ST-13"
+        required: true
+      cases:
+        description: "The TQ-approved SIT cases (Markdown)"
+        required: true
+      run_key:
+        description: "Optional run name, set by the ADK agent to find this run"
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+  pull-requests: write
+  actions: write   # to start the Robot tests workflow on the new branch
+
+jobs:
+  automate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      INCIDENT: ${{ inputs.incident }}
+      REVIEW: ${{ inputs.review_ticket }}
+    steps:
+      - name: Check inputs
+        run: |
+          [[ "$INCIDENT" =~ ^[A-Z][A-Z0-9]+-[0-9]+$ ]] || { echo "::error::Invalid incident key: $INCIDENT"; exit 1; }
+          [[ "$REVIEW" =~ ^[A-Z][A-Z0-9]+-[0-9]+$ ]] || { echo "::error::Invalid review ticket key: $REVIEW"; exit 1; }
+          echo "BRANCH=ai/$INCIDENT" >> "$GITHUB_ENV"
+
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false   # Kiro runs in this workspace and must not be able to push
+
+      - name: Stop if the branch already exists
+        run: |
+          if git ls-remote --exit-code --heads origin "$BRANCH" >/dev/null; then
+            echo "::error::$BRANCH already exists. Close its pull request and delete the branch, then run again."
+            exit 1
+          fi
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install Robot Framework
+        run: pip install -r requirements.txt
+
+      - name: Install Kiro CLI
+        run: |
+          curl -fsSL https://cli.kiro.dev/install | bash
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Write the task for Kiro
+        env:
+          CASES: ${{ inputs.cases }}
+        run: |
+          {
+            printf 'Incident: %s\nTQ review ticket: %s (TQ Approved)\n\n' "$INCIDENT" "$REVIEW"
+            printf 'Automate these TQ-approved SIT test cases. Follow the robot-writer instructions and '
+            printf '.kiro/steering/conventions.md. Tag every new test with sit, %s, regression and its REQ id.\n\n' "$INCIDENT"
+            printf '%s\n' "$CASES"
+          } > "$RUNNER_TEMP/task.md"
+
+      - name: Kiro writes the tests
+        env:
+          KIRO_API_KEY: ${{ secrets.KIRO_API_KEY }}
+        run: |
+          git switch -c "$BRANCH"
+          kiro-cli --version
+          kiro-cli chat --v3 --no-interactive --agent robot-writer \
+            --trust-tools=read_file,list_directory,file_search,grep_search,fs_write,fs_append,str_replace,execute_bash \
+            --output-format stream-json < "$RUNNER_TEMP/task.md" > "$RUNNER_TEMP/kiro.jsonl"
+          python ci/kiro_summary.py "$RUNNER_TEMP/kiro.jsonl"
+
+      - name: Guard (only new, tagged tests in tests/ and resources/)
+        run: python ci/check_diff.py origin/main "$INCIDENT" | tee "$RUNNER_TEMP/guard.txt"
+
+      - name: Check the suite parses
+        run: robot --dryrun --output NONE --report NONE --log NONE tests
+
+      - name: Run the new tests
+        run: |
+          robot --outputdir results --include "$INCIDENT" tests || echo "TESTS_FAILED=1" >> "$GITHUB_ENV"
+          python ci/summary.py results/output.xml "$INCIDENT" > "$RUNNER_TEMP/results.md"
+
+      - name: Push the branch and open the pull request
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add tests resources
+          git commit -q -m "test($INCIDENT): automate TQ-approved SIT cases from $REVIEW" \
+                        -m "Written by Kiro (robot-writer agent) in workflow run $GITHUB_RUN_ID. ai-drafted."
+          git push -q "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" "$BRANCH"
+          if [ -n "${TESTS_FAILED:-}" ]; then
+            status="Some new tests failed: check whether the site or the test is wrong before merging."
+          else
+            status="All new tests passed."
+          fi
+          {
+            echo "## $INCIDENT: SIT tests from TQ review $REVIEW"
+            echo
+            echo "Kiro automated the TQ-approved SIT cases for **$INCIDENT** (approved in **$REVIEW**). $status"
+            echo
+            echo "**Reviewer:** check that the tests match the approved cases, then merge. Agents never merge."
+            echo
+            cat "$RUNNER_TEMP/results.md"
+            echo
+            echo "### Guard"
+            echo
+            sed 's/^/    /' "$RUNNER_TEMP/guard.txt"
+            echo
+            echo "### Kiro's notes"
+            echo
+            cat "$RUNNER_TEMP/kiro_reply.md"
+            echo
+            echo "---"
+            echo "_ai-drafted · Kiro robot-writer · run [$GITHUB_RUN_ID]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID)_"
+          } > "$RUNNER_TEMP/pr.md"
+          gh label create ai-drafted --color FBCA04 --description "Drafted by an AI agent; needs human review" --force
+          gh pr create --base main --head "$BRANCH" --label ai-drafted \
+            --title "test($INCIDENT): SIT tests from TQ review $REVIEW" --body-file "$RUNNER_TEMP/pr.md"
+          # A pull request opened with this token doesn't start other workflows, so start the check explicitly.
+          gh workflow run robot-tests.yml --ref "$BRANCH" -f include="smokeOR$INCIDENT" -f run_key="PR check $INCIDENT"
+
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: kiro-results
+          path: |
+            results/
+            ${{ runner.temp }}/kiro.jsonl
+            ${{ runner.temp }}/task.md
