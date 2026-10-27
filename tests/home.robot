@@ -25,3 +25,12 @@ Get Started Shows Install Command
     [Tags]    regression    REQ-100
     Wait Until Element Is Visible    id:get-started
     Page Should Contain    pip install robotframework
+
+Home Page Renders Correctly With Shared Global Styles
+    [Documentation]    SIT-INCIDENT-2-05: The home page loads with the Robot Framework title and a rendered hero
+    ...    title, and anchor scrolling to Get Started clears the shared sticky header.
+    [Tags]    sit    INCIDENT-2    regression    REQ-100
+    Title Should Be    Robot Framework
+    Hero Title Should Have Height
+    Open Home Section    get-started
+    Heading Should Clear Sticky Header    get-started

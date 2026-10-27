@@ -47,3 +47,26 @@ Click First Visible
         END
     END
     Fail    No visible element matches ${locator}
+
+Location Hash Should Be
+    [Documentation]    Passes when the browser URL hash equals #${section_id}.
+    [Arguments]    ${section_id}
+    ${hash}=    Execute Javascript    return location.hash.replace("#", "");
+    Should Be Equal    ${hash}    ${section_id}    URL hash is "${hash}", expected "${section_id}"
+
+Heading Should Clear Sticky Header
+    [Documentation]    Passes when the element with id ${section_id} sits in the viewport with its top at or below
+    ...    the bottom of the sticky site header, so it is not hidden under the header.
+    [Arguments]    ${section_id}
+    Wait Until Element Is Visible    id:${section_id}
+    Wait Until Keyword Succeeds    5s    250ms    Heading Top Is Below Header    ${section_id}
+
+Heading Top Is Below Header
+    [Documentation]    Fails unless the top of the element is between the sticky header bottom and the window bottom.
+    [Arguments]    ${section_id}
+    ${clears}=    Execute Javascript
+    ...    const nav = document.querySelector('nav[data-component="nav-top"]');
+    ...    const hb = nav ? nav.getBoundingClientRect().bottom : 0;
+    ...    const r = document.getElementById("${section_id}").getBoundingClientRect();
+    ...    return r.top >= hb - 1 && r.top < window.innerHeight;
+    Should Be True    ${clears}    Heading "${section_id}" is hidden under the sticky header or out of view

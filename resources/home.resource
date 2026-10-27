@@ -30,3 +30,16 @@ Footer Should Link To
     [Documentation]    The page footer links to ${href}.
     [Arguments]    ${href}
     Page Should Contain Element    css:a[href="${href}"]
+
+Hero Title Should Have Height
+    [Documentation]    The hero title is visible and rendered with a height greater than 0, i.e. global styles apply.
+    Wait Until Element Is Visible    ${HOME_HERO}
+    ${height}=    Execute Javascript
+    ...    return document.querySelector("h1.hero-title").getBoundingClientRect().height;
+    Should Be True    ${height} > 0    Hero title height is ${height}, expected greater than 0
+
+Open Home Section
+    [Documentation]    Navigates directly to the home page anchor #${section_id} and waits for the section.
+    [Arguments]    ${section_id}
+    Go To    ${BASE_URL}/#${section_id}
+    Wait Until Element Is Visible    id:${section_id}
