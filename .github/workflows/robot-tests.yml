@@ -1,7 +1,9 @@
 # Runs the Robot Framework suite in headless Chrome, selected by tag.
 #   Manual / agent: Actions > Robot tests > Run workflow, include = a tag pattern (smoke, regression, REQ-300,
 #                   INCIDENT-1, smokeORREQ-300, ...). run_key lets the ADK agent find its own run.
-#   Pull requests:  the full regression set (narrowed to the changed tags in a later phase).
+#   Pull requests:  Kiro automate starts this workflow on the PR branch (include = smokeOR<INCIDENT>). There is no
+#                   pull_request trigger: a PR opened by the workflow token leaves a blocked run that shows as a
+#                   failing build in Jira.
 name: Robot tests
 run-name: ${{ inputs.run_key || format('Robot tests ({0})', inputs.include || 'regression') }}
 
@@ -16,7 +18,6 @@ on:
         description: "Optional run name, set by the ADK agent to find this run"
         required: false
         default: ""
-  pull_request:
 
 permissions:
   contents: read
