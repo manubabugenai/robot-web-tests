@@ -39,12 +39,6 @@ jobs:
           [[ "$INCIDENT" =~ ^[A-Z][A-Z0-9]+-[0-9]+$ ]] || { echo "::error::Invalid incident key: $INCIDENT"; exit 1; }
           echo "BRANCH=ai/$INCIDENT" >> "$GITHUB_ENV"
 
-      - uses: actions/checkout@v4
-        with:
-          ref: ai/${{ inputs.incident }}
-          fetch-depth: 0
-          persist-credentials: false   # Kiro runs in this workspace and must not be able to push
-
       - name: Find the open pull request
         env:
           GH_TOKEN: ${{ github.token }}
@@ -52,6 +46,12 @@ jobs:
           pr="$(gh pr list --repo "$GITHUB_REPOSITORY" --head "$BRANCH" --state open --json number --jq '.[0].number')"
           [ -n "$pr" ] || { echo "::error::$BRANCH has no open pull request to repair."; exit 1; }
           echo "PR=$pr" >> "$GITHUB_ENV"
+
+      - uses: actions/checkout@v4
+        with:
+          ref: ai/${{ inputs.incident }}
+          fetch-depth: 0
+          persist-credentials: false   # Kiro runs in this workspace and must not be able to push
 
       - name: Update the branch with main (latest guard, Kiro agents and skills)
         run: |
