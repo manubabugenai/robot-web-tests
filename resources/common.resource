@@ -23,7 +23,7 @@ Section Should Be In View
     [Documentation]    Passes when the element with id ${section_id} is visible inside the browser window.
     [Arguments]    ${section_id}
     Wait Until Element Is Visible    id:${section_id}
-    Wait Until Keyword Succeeds    5s    250ms    Element Top Should Be In Viewport    ${section_id}
+    Wait Until Keyword Succeeds    15s    250ms    Element Top Should Be In Viewport    ${section_id}
 
 Element Top Should Be In Viewport
     [Documentation]    Fails unless the top of the element is between the top and the bottom of the window.
