@@ -24,4 +24,5 @@ Rules for every test in this repo, for people and for Kiro.
 ## Changes
 - Never delete or weaken an existing test (no removed assertions, no `Skip`). A CI check rejects it.
 - Only change files under `tests/` and `resources/`.
-- Run the new tests before finishing: `robot --outputdir results --include <INCIDENT-KEY> tests`.
+- Check the new tests with a dry run before finishing: `robot --dryrun --output NONE --report NONE --log NONE tests`.
+  They run in a browser later, by tag, on the pull request branch.
