@@ -47,4 +47,4 @@ Jump To Section From Page Menu
 How To Join Section Should Be Complete
     [Documentation]    The How To Join section is visible and lists an application form link inside it.
     Wait Until Element Is Visible    id:how-to-join
-    Page Should Contain Element    xpath://*[@id="how-to-join"]//a[@href]
+    Page Should Contain Element    xpath://*[@id="how-to-join"]/following-sibling::div[1]//a[@href]
