@@ -30,3 +30,10 @@ Footer Should Link To
     [Documentation]    The page footer links to ${href}.
     [Arguments]    ${href}
     Page Should Contain Element    css:a[href="${href}"]
+
+Jump To Home Section From Header
+    [Documentation]    Clicks the header link to /#${section_id} and waits until the hash and the section are reached.
+    [Arguments]    ${section_id}
+    Click First Visible    css:nav[data-component="nav-top"] a[href="/#${section_id}"]
+    Wait Until Location Contains    \#${section_id}
+    Section Should Be In View    ${section_id}

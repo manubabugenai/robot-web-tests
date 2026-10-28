@@ -25,3 +25,10 @@ Get Started Shows Install Command
     [Tags]    regression    REQ-100
     Wait Until Element Is Visible    id:get-started
     Page Should Contain    pip install robotframework
+
+Verify Global CSS Scroll Offset On Home Page
+    [Documentation]    SIT-INCIDENT-2-04: The shared global CSS keeps home page anchor navigation working, with the jumped-to heading visible below the sticky header.
+    [Tags]    sit    INCIDENT-2    regression    REQ-100
+    Element Should Be Visible    ${HOME_HERO}
+    Jump To Home Section From Header    get-started
+    Section Should Be In View    get-started
