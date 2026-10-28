@@ -30,3 +30,19 @@ Members Should Include
     [Arguments]    ${company}
     Wait Until Element Is Visible    ${MEMBERS_SECTION}
     Page Should Contain Element    xpath://h3[normalize-space()="${company}"]
+
+Page Menu Should Link To Section
+    [Documentation]    The Foundation page menu has a link to #${section_id}.
+    [Arguments]    ${section_id}
+    ${locator}=    Page Menu Link    ${section_id}
+    Page Should Contain Element    ${locator}
+
+Open Page Menu Section
+    [Documentation]    Clicks the Foundation page menu link to #${section_id} and waits for the location hash
+    ...    and for the section to be in view below the sticky header.
+    [Arguments]    ${section_id}
+    ${locator}=    Page Menu Link    ${section_id}
+    Click First Visible    ${locator}
+    ${hash}=    Catenate    SEPARATOR=    #    ${section_id}
+    Wait Until Location Contains    ${hash}
+    Section Should Be In View    ${section_id}

@@ -25,3 +25,10 @@ Get Started Shows Install Command
     [Tags]    regression    REQ-100
     Wait Until Element Is Visible    id:get-started
     Page Should Contain    pip install robotframework
+
+Global Styles Change Keeps Home Page Layout
+    [Documentation]    SIT-INCIDENT-2-04: The Home page still renders correctly after the global styles change.
+    [Tags]    sit    INCIDENT-2    regression    REQ-100
+    Title Should Be    Robot Framework
+    Element Should Be Visible    ${HOME_HERO}
+    Element Should Be Visible    ${NAV_TOP}
