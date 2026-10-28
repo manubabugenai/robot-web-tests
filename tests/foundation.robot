@@ -26,3 +26,32 @@ Members List Includes ABB And Nokia
     [Tags]    regression    REQ-300
     Members Should Include    ABB
     Members Should Include    Nokia
+
+Join Link Jumps To How To Join Section
+    [Documentation]    SIT-INCIDENT-2-01: Join in the Foundation page menu jumps to How To Join, showing the 4 steps and the application form link.
+    [Tags]    sit    INCIDENT-2    REQ-300    regression
+    Click Page Menu Link    how-to-join
+    Location Hash Should Be    how-to-join
+    Section Should Be In View    how-to-join
+    How To Join Steps Should Count    4
+    Application Form Link Should Point To Form
+
+Join Link Target Heading Is Below The Sticky Header
+    [Documentation]    SIT-INCIDENT-2-02: After the Join jump, the How To Join heading sits below the sticky header and is fully visible.
+    [Tags]    sit    INCIDENT-2    REQ-300    regression
+    Click Page Menu Link    how-to-join
+    Location Hash Should Be    how-to-join
+    Section Heading Should Be Below Sticky Header    how-to-join
+
+Application Form Link Points To External Form
+    [Documentation]    SIT-INCIDENT-2-03: The How To Join application form link points to the correct external form, without submitting it.
+    [Tags]    sit    INCIDENT-2    REQ-300    regression
+    Go To    ${BASE_URL}${FOUNDATION_PATH}#how-to-join
+    Application Form Link Should Point To Form
+
+Fees Link Jumps To Annual Fee Section
+    [Documentation]    SIT-INCIDENT-2-04: Fees in the Foundation page menu jumps to the Annual fee section with its heading fully visible below the sticky header.
+    [Tags]    sit    INCIDENT-2    REQ-300    regression
+    Click Page Menu Link    annual-fee
+    Location Hash Should Be    annual-fee
+    Section Heading Should Be Below Sticky Header    annual-fee

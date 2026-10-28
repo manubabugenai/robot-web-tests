@@ -30,3 +30,28 @@ Footer Should Link To
     [Documentation]    The page footer links to ${href}.
     [Arguments]    ${href}
     Page Should Contain Element    css:a[href="${href}"]
+
+Hero Title Should Render With Height
+    [Documentation]    The hero title element has a rendered height greater than 0, confirming shared global styles apply.
+    Wait Until Element Is Visible    ${HOME_HERO}
+    ${height}=    Execute Javascript
+    ...    const h = document.querySelector("h1.hero-title");
+    ...    return h ? h.getBoundingClientRect().height : 0;
+    Should Be True    ${height} > 0    Hero title has no rendered height; global styles did not apply
+
+Home Section Heading Should Be Below Sticky Header
+    [Documentation]    After navigating to #${section_id}, its heading sits below the sticky header bottom and is visible.
+    [Arguments]    ${section_id}
+    Go To    ${BASE_URL}/#${section_id}
+    Wait Until Element Is Visible    id:${section_id}
+    Wait Until Keyword Succeeds    5s    250ms    Home Heading Top Clears Sticky Header    ${section_id}
+
+Home Heading Top Clears Sticky Header
+    [Documentation]    Fails unless the top of the section is at or below the sticky header bottom and inside the window.
+    [Arguments]    ${section_id}
+    ${clears}=    Execute Javascript
+    ...    const header = document.querySelector('nav[data-component="nav-top"]');
+    ...    const headerBottom = header ? header.getBoundingClientRect().bottom : 0;
+    ...    const r = document.getElementById("${section_id}").getBoundingClientRect();
+    ...    return r.top >= headerBottom - 1 && r.top < window.innerHeight;
+    Should Be True    ${clears}    Section "${section_id}" heading is hidden behind or outside the sticky header
