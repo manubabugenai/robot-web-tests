@@ -35,9 +35,15 @@ Element Top Should Be In Viewport
 
 Click First Visible
     [Documentation]    Clicks the first visible element matching ${locator}. The site repeats some links in a hidden
-    ...    mobile menu, so the first match in the page is not always the one a user can click.
+    ...    mobile menu, so the first match in the page is not always the one a user can click. Retries when the
+    ...    page re-renders between finding and clicking (a stale element).
     [Arguments]    ${locator}
     Wait Until Page Contains Element    ${locator}
+    Wait Until Keyword Succeeds    3x    500ms    Click First Visible Once    ${locator}
+
+Click First Visible Once
+    [Documentation]    One attempt of Click First Visible; fails when no matching element is visible.
+    [Arguments]    ${locator}
     ${elements}=    Get WebElements    ${locator}
     FOR    ${element}    IN    @{elements}
         ${visible}=    Run Keyword And Return Status    Element Should Be Visible    ${element}
@@ -46,4 +52,5 @@ Click First Visible
             RETURN
         END
     END
+    Fail    No visible element matches ${locator}
     Fail    No visible element matches ${locator}

@@ -15,6 +15,8 @@ The team's procedure for repairing a failing UI test without weakening it.
 ## 2. Classify before changing anything
 - **Test-code defect** (repair it): the locator points to the wrong element (e.g. counting items inside a heading
   when they are in the block after it), an old id or class, a missing wait, an element hidden in the mobile menu.
+  `StaleElementReferenceException` means the page re-rendered between finding and using an element: re-find
+  it inside `Wait Until Keyword Succeeds` (as `Click First Visible` does) instead of keeping an old reference.
 - **Product defect** (don't touch it): the page really shows something else than the approved test case expects
   (a missing section, a wrong text, a broken link). Report it instead.
 
