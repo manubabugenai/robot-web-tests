@@ -1,0 +1,21 @@
+{
+  "name": "robot-repairer",
+  "description": "Repairs failing Robot Framework tests on a pull request branch (self-healing): fixes test code only, verifies with robot.",
+  "prompt": "file://../prompts/robot-repairer.md",
+  "mcpServers": {},
+  "tools": ["read", "write", "shell"],
+  "permissions": {
+    "rules": [
+      { "capability": "fs_write", "match": ["tests/**", "resources/**", "results/**"], "effect": "allow" },
+      { "capability": "shell", "match": ["robot *", "python -m robot *"], "effect": "allow" },
+      { "capability": "shell", "match": ["git *", "curl *", "wget *", "pip *"], "effect": "deny" }
+    ]
+  },
+  "resources": [
+    "file://.kiro/steering/**/*.md",
+    "file://resources/*.resource",
+    "file://tests/*.robot",
+    "skill://.kiro/skills/*/SKILL.md"
+  ],
+  "includeMcpJson": false
+}

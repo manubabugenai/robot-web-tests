@@ -1,0 +1,170 @@
+# Kiro repairs failing tests on an open Kiro pull request (self-healing) and pushes the fix to the same PR.
+#   Started by the ADK agent after the user approves "fix the failing tests" (or by hand: Actions > Kiro repair).
+#   Kiro (robot-repairer agent + locator-repair skill) may only change tests/ and resources/ and run robot; it has
+#   no git credentials. The guard rejects any repair that adds, removes or weakens a test, and the failing tests
+#   must pass again before anything is pushed. People review and merge the PR.
+name: Kiro repair
+run-name: ${{ inputs.run_key || format('Kiro repair {0}', inputs.incident) }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      incident:
+        description: "Incident key, e.g. INCIDENT-2 (its PR branch is ai/<incident>)"
+        required: true
+      tests:
+        description: "The failing test names, one per line"
+        required: true
+      failures:
+        description: "The failing tests with their failure messages (Markdown)"
+        required: true
+      run_key:
+        description: "Optional run name, set by the ADK agent to find this run"
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      INCIDENT: ${{ inputs.incident }}
+    steps:
+      - name: Check inputs
+        run: |
+          [[ "$INCIDENT" =~ ^[A-Z][A-Z0-9]+-[0-9]+$ ]] || { echo "::error::Invalid incident key: $INCIDENT"; exit 1; }
+          echo "BRANCH=ai/$INCIDENT" >> "$GITHUB_ENV"
+
+      - uses: actions/checkout@v4
+        with:
+          ref: ai/${{ inputs.incident }}
+          fetch-depth: 0
+          persist-credentials: false   # Kiro runs in this workspace and must not be able to push
+
+      - name: Find the open pull request
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          pr="$(gh pr list --repo "$GITHUB_REPOSITORY" --head "$BRANCH" --state open --json number --jq '.[0].number')"
+          [ -n "$pr" ] || { echo "::error::$BRANCH has no open pull request to repair."; exit 1; }
+          echo "PR=$pr" >> "$GITHUB_ENV"
+
+      - name: Update the branch with main (latest guard, Kiro agents and skills)
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git merge -q --no-edit origin/main
+          echo "BASE=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install Robot Framework
+        run: pip install -r requirements.txt
+
+      - name: Install Kiro CLI
+        run: |
+          curl -fsSL https://cli.kiro.dev/install | bash
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Write the task for Kiro
+        env:
+          FAILURES: ${{ inputs.failures }}
+        run: |
+          {
+            printf 'Incident: %s\nPull request: #%s (branch %s)\n\n' "$INCIDENT" "$PR" "$BRANCH"
+            printf 'These tests failed in the last run. Repair them with the locator-repair skill: fix test code only,\n'
+            printf 'verify each one by running it, and report as the robot-repairer instructions say.\n\n'
+            printf '%s\n' "$FAILURES"
+          } > "$RUNNER_TEMP/task.md"
+
+      - name: Kiro repairs the tests
+        env:
+          KIRO_API_KEY: ${{ secrets.KIRO_API_KEY }}
+        run: |
+          kiro-cli --version
+          kiro-cli chat --v3 --no-interactive --agent robot-repairer \
+            --trust-tools=read_file,list_directory,file_search,grep_search,fs_write,fs_append,str_replace,execute_bash \
+            --output-format stream-json < "$RUNNER_TEMP/task.md" > "$RUNNER_TEMP/kiro.jsonl"
+          python ci/kiro_summary.py "$RUNNER_TEMP/kiro.jsonl"
+
+      - name: Guard (test code fixed only; nothing added, removed or weakened)
+        run: python ci/check_diff.py "$BASE" "$INCIDENT" --repair | tee "$RUNNER_TEMP/guard.txt"
+
+      - name: Check the suite parses
+        run: robot --dryrun --output NONE --report NONE --log NONE tests
+
+      - name: Run the repaired tests
+        env:
+          TESTS: ${{ inputs.tests }}
+        run: |
+          args=()
+          while IFS= read -r name; do [ -n "$name" ] && args+=(--test "$name"); done <<< "$TESTS"
+          robot --outputdir results "${args[@]}" tests
+          python ci/summary.py results/output.xml "$INCIDENT" > "$RUNNER_TEMP/results.md"
+
+      - name: Push the repair to the pull request
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git add tests resources
+          if git diff --cached --quiet; then
+            echo "NO_CHANGE=1" >> "$GITHUB_ENV"   # the tests pass again without a change (a flaky failure)
+            exit 0
+          fi
+          git commit -q -m "fix($INCIDENT): self-healing repair of failing tests (Kiro)" \
+                        -m "Repaired by Kiro (robot-repairer, locator-repair skill) in workflow run $GITHUB_RUN_ID. ai-drafted."
+          git push -q "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" "HEAD:$BRANCH"
+
+      - name: Comment on the pull request
+        if: always() && env.PR != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          STATUS: ${{ job.status }}
+        run: |
+          {
+            if [ "$STATUS" = "success" ] && [ -n "${NO_CHANGE:-}" ]; then
+              echo "## ℹ️ The failing tests pass again without a change"
+              echo
+              echo "Kiro re-ran them and they passed, so nothing was pushed (the earlier failure looks flaky)."
+            elif [ "$STATUS" = "success" ]; then
+              echo "## 🩹 Kiro repaired the failing tests (self-healing)"
+              echo
+              echo "The repaired tests pass again; the fix is in the latest commit. **Reviewer:** check the change keeps"
+              echo "the tests' intent, then merge."
+              echo
+              cat "$RUNNER_TEMP/results.md" 2>/dev/null
+            else
+              echo "## ⚠️ Kiro's repair was not pushed"
+              echo
+              echo "A step failed (see the run). If Kiro classified a failure as a product defect, the site needs a fix, not the test."
+            fi
+            echo
+            echo "### Guard"
+            echo
+            sed 's/^/    /' "$RUNNER_TEMP/guard.txt" 2>/dev/null || echo "    (not reached)"
+            echo
+            echo "### Kiro's notes"
+            echo
+            cat "$RUNNER_TEMP/kiro_reply.md" 2>/dev/null || echo "(no reply)"
+            echo
+            echo "---"
+            echo "_ai-drafted · Kiro robot-repairer · run [$GITHUB_RUN_ID]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID)_"
+          } > "$RUNNER_TEMP/comment.md"
+          gh pr comment "$PR" --repo "$GITHUB_REPOSITORY" --body-file "$RUNNER_TEMP/comment.md"
+
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: kiro-repair-results
+          path: |
+            results/
+            ${{ runner.temp }}/kiro.jsonl
+            ${{ runner.temp }}/task.md

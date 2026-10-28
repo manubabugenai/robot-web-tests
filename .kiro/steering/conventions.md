@@ -26,3 +26,5 @@ Rules for every test in this repo, for people and for Kiro.
 - Only change files under `tests/` and `resources/`.
 - Check the new tests with a dry run before finishing: `robot --dryrun --output NONE --report NONE --log NONE tests`.
   They run in a browser later, by tag, on the pull request branch.
+- Repairs (self-healing) fix the locator or keyword in `resources/` and keep every assertion and expected value;
+  a repair never adds, removes or renames a test (the `locator-repair` skill has the procedure).

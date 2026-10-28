@@ -1,6 +1,6 @@
 """Guardrail for changes Kiro makes: reject anything but new or extended tests, before anything is pushed.
 
-Usage: python ci/check_diff.py <base-ref> <INCIDENT-KEY>
+Usage: python ci/check_diff.py <base-ref> <INCIDENT-KEY> [--repair]
 
 Fails (exit 1) when:
 - a file outside tests/ or resources/ changed (results/ is ignored),
@@ -8,6 +8,11 @@ Fails (exit 1) when:
 - an existing test lost tags or became shorter (a weakened assertion),
 - a new test lacks the tags sit, <INCIDENT-KEY>, regression and a REQ id, or uses Sleep or Skip,
 - nothing new was added.
+
+With --repair (Kiro fixing failing tests; base = the PR branch before the fix), instead of the last two rules:
+- a test was added (a repair only fixes),
+- a test now uses Sleep or Skip,
+- a keyword in resources/ has fewer steps than before (an assertion removed inside a keyword).
 """
 
 import re
@@ -17,6 +22,7 @@ import tempfile
 from pathlib import Path
 
 from robot.api import TestSuiteBuilder
+from robot.running import ResourceFile
 
 ALLOWED = ("tests/", "resources/")
 REQ = re.compile(r"^REQ-\d+$")
@@ -56,7 +62,37 @@ def base_tests(base: str) -> dict[str, dict]:
         return tests_in(Path(tmp))
 
 
-def main(base: str, incident: str) -> int:
+def keyword_steps(directory: Path) -> dict[str, int]:
+    """Steps per keyword in the .resource files under `directory`: {"file: keyword": steps}."""
+    steps = {}
+    for path in sorted(directory.glob("*.resource")):
+        for keyword in ResourceFile.from_file_system(str(path)).keywords:
+            steps[f"{path.name}: {keyword.name}"] = len(keyword.body)
+    return steps
+
+
+def base_keyword_steps(base: str) -> dict[str, int]:
+    """keyword_steps of the resources/ folder as it is on `base`."""
+    with tempfile.TemporaryDirectory() as tmp:
+        for path in git("ls-tree", "-r", "--name-only", base, "resources/").splitlines():
+            if path.endswith(".resource"):
+                (Path(tmp) / Path(path).name).write_text(git("show", f"{base}:{path}"), encoding="utf-8")
+        return keyword_steps(Path(tmp))
+
+
+def check_repair(before: dict, after: dict, base: str) -> list[str]:
+    """The repair-only rules: nothing added, no Sleep/Skip, no keyword shortened."""
+    problems = [f"a repair must not add tests: {name}" for name in after if name not in before]
+    for name, test in after.items():
+        if bad := sorted(FORBIDDEN_KEYWORDS & set(test["keywords"]) - set(before.get(name, {}).get("keywords", []))):
+            problems.append(f"{name!r} now uses forbidden keywords: {', '.join(bad)}")
+    old_steps, new_steps = base_keyword_steps(base), keyword_steps(Path("resources"))
+    problems += [f"keyword {k} has fewer steps than before ({n} -> {new_steps[k]})"
+                 for k, n in old_steps.items() if k in new_steps and new_steps[k] < n]
+    return problems
+
+
+def main(base: str, incident: str, repair: bool = False) -> int:
     problems = []
     outside = [f for f in changed_files(base) if not f.startswith(ALLOWED) and not f.startswith("results/")]
     problems += [f"changed a file outside tests/ and resources/: {f}" for f in outside]
@@ -70,6 +106,16 @@ def main(base: str, incident: str) -> int:
             problems.append(f"removed tags from {name}: {sorted(old['tags'] - new['tags'])}")
         elif new["steps"] < old["steps"]:
             problems.append(f"{name} has fewer steps than before ({old['steps']} -> {new['steps']})")
+
+    if repair:
+        problems += check_repair(before, after, base)
+        print(f"Repair against {base}: {len(before)} tests before, {len(after)} after.")
+        if problems:
+            print("\nREJECTED:")
+            print("\n".join(f"  - {p}" for p in problems))
+            return 1
+        print("\nOK: only test code fixed; no test added, removed or weakened.")
+        return 0
 
     added = {name: t for name, t in after.items() if name not in before}
     for name, test in added.items():
@@ -95,4 +141,4 @@ def main(base: str, incident: str) -> int:
 
 
 if __name__ == "__main__":
-    sys.exit(main(sys.argv[1], sys.argv[2]))
+    sys.exit(main(sys.argv[1], sys.argv[2], repair="--repair" in sys.argv[3:]))
