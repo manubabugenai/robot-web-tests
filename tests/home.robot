@@ -25,3 +25,11 @@ Get Started Shows Install Command
     [Tags]    regression    REQ-100
     Wait Until Element Is Visible    id:get-started
     Page Should Contain    pip install robotframework
+
+Check Shared Global Styles Change On Home Page
+    [Documentation]    SIT-INCIDENT-2-04: The Home page loads with the shared header and hero rendered after the global styles change.
+    [Tags]    sit    INCIDENT-2    regression    REQ-100
+    Title Should Be    Robot Framework
+    Element Should Be Visible    ${HOME_HERO}
+    Element Should Be Visible    ${NAV_TOP}
+    Top Navigation Should Link To    /foundation
