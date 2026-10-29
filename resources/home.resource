@@ -30,3 +30,11 @@ Footer Should Link To
     [Documentation]    The page footer links to ${href}.
     [Arguments]    ${href}
     Page Should Contain Element    css:a[href="${href}"]
+
+Scroll Padding Top Should Be
+    [Documentation]    The computed scroll-padding-top of the html element equals ${expected} (e.g. "80px").
+    [Arguments]    ${expected}
+    ${actual}=    Execute Javascript
+    ...    return window.getComputedStyle(document.documentElement).scrollPaddingTop;
+    Should Be Equal    ${actual}    ${expected}
+    ...    scroll-padding-top should be ${expected} but was ${actual}

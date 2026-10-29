@@ -25,3 +25,9 @@ Get Started Shows Install Command
     [Tags]    regression    REQ-100
     Wait Until Element Is Visible    id:get-started
     Page Should Contain    pip install robotframework
+
+Verify Global Scroll Padding Top On Home Page
+    [Documentation]    SIT-INCIDENT-2-03: The Home page loads with the global scroll-padding-top of 80px applied.
+    [Tags]    sit    INCIDENT-2    REQ-100    regression
+    Element Should Be Visible    ${HOME_HERO}
+    Scroll Padding Top Should Be    80px

@@ -26,3 +26,11 @@ Footer Shows Legal Links
     [Tags]    regression    REQ-200
     Footer Should Link To    https://robotframework.org/privacy-policy
     Footer Should Link To    https://robotframework.org/code-of-ethics
+
+Shared Header Navigation On Another Site Page
+    [Documentation]    SIT-INCIDENT-2-04: The shared header "< Back to Robot Framework" link on the Foundation page returns to the home page.
+    [Tags]    sit    INCIDENT-2    REQ-200    regression
+    Open Foundation From Header
+    Click First Visible    xpath://nav[@data-component="nav-top"]//a[@href="/"][contains(normalize-space(), "Back to Robot Framework")]
+    Wait Until Element Is Visible    ${HOME_HERO}
+    Title Should Be    Robot Framework
