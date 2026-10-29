@@ -43,9 +43,9 @@ Join Link Should Jump To How To Join
 How To Join Should Show Steps And Application Form
     [Documentation]    The How To Join section shows the four steps and a link to the application form.
     Wait Until Element Is Visible    ${HOW_TO_JOIN}
-    ${steps}=    Get Element Count    css:#how-to-join li
+    ${steps}=    Get Element Count    xpath://*[@id="how-to-join"]/following-sibling::*[1]//li
     Should Be True    ${steps} >= 4    How To Join should list at least four steps, found ${steps}
-    Page Should Contain Element    css:#how-to-join a[href]
+    Page Should Contain Element    xpath://*[@id="how-to-join"]/following-sibling::*[1]//a[@href]
 
 Section Heading Should Clear Sticky Header
     [Documentation]    The top of section #${section_id} sits below the sticky header (${STICKY_HEADER_PX}px) and in view.
