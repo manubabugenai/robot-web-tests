@@ -30,3 +30,13 @@ Footer Should Link To
     [Documentation]    The page footer links to ${href}.
     [Arguments]    ${href}
     Page Should Contain Element    css:a[href="${href}"]
+
+Header Should Be Visible
+    [Documentation]    The shared sticky site header is visible on the current page.
+    Wait Until Element Is Visible    ${NAV_TOP}
+
+Back To Robot Framework From Header
+    [Documentation]    Clicks "< Back to Robot Framework" in the shared header and waits for the home page.
+    Click First Visible
+    ...    xpath://nav[@data-component="nav-top"]//a[@href="/"][contains(normalize-space(), "Back to Robot Framework")]
+    Wait Until Element Is Visible    ${HOME_HERO}

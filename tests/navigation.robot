@@ -26,3 +26,11 @@ Footer Shows Legal Links
     [Tags]    regression    REQ-200
     Footer Should Link To    https://robotframework.org/privacy-policy
     Footer Should Link To    https://robotframework.org/code-of-ethics
+
+Shared Header Back Link Works On Foundation Page
+    [Documentation]    SIT-INCIDENT-2-05: The shared header "< Back to Robot Framework" link works from the Foundation page after the shared template change.
+    [Tags]    sit    INCIDENT-2    regression    REQ-200
+    Open Foundation From Header
+    Title Should Be    Robot Framework Foundation
+    Back To Robot Framework From Header
+    Title Should Be    Robot Framework

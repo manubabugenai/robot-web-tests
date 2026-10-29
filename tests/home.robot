@@ -25,3 +25,10 @@ Get Started Shows Install Command
     [Tags]    regression    REQ-100
     Wait Until Element Is Visible    id:get-started
     Page Should Contain    pip install robotframework
+
+Home Page Unaffected By Global CSS Change
+    [Documentation]    SIT-INCIDENT-2-04: The shared header and anchor scrolling still work on the home page after the global CSS change.
+    [Tags]    sit    INCIDENT-2    regression    REQ-100
+    Header Should Be Visible
+    Element Should Be Visible    ${HOME_HERO}
+    Section Should Be In View    get-started

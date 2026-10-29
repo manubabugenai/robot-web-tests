@@ -30,3 +30,22 @@ Members Should Include
     [Arguments]    ${company}
     Wait Until Element Is Visible    ${MEMBERS_SECTION}
     Page Should Contain Element    xpath://h3[normalize-space()="${company}"]
+
+Page Menu Should Link To Section
+    [Documentation]    The Foundation page menu has a link whose target is #${section_id}.
+    [Arguments]    ${section_id}
+    ${locator}=    Page Menu Link    ${section_id}
+    Page Should Contain Element    ${locator}
+
+Click Page Menu Link
+    [Documentation]    Clicks the Foundation page menu link to #${section_id}.
+    [Arguments]    ${section_id}
+    ${locator}=    Page Menu Link    ${section_id}
+    Click First Visible    ${locator}
+
+Page Menu Link Jumps To Section
+    [Documentation]    Clicks the page menu link to #${section_id} and waits for that section to be in view.
+    [Arguments]    ${section_id}
+    Click Page Menu Link    ${section_id}
+    Wait Until Location Contains    \#${section_id}
+    Section Should Be In View    ${section_id}
