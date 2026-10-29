@@ -2,8 +2,8 @@
 #   Started by the ADK agent after the user approves "fix the failing tests" (or by hand: Actions > Kiro repair).
 #   Kiro (robot-repairer agent + locator-repair skill) may only change tests/ and resources/ and run robot; it has
 #   no git credentials. The failing tests are re-run first: if they already pass, Kiro isn't started. The guard
-#   rejects any repair that adds, removes or weakens a test, and the failing tests must pass again before anything
-#   is pushed. People review and merge the PR.
+#   rejects any repair that adds, removes or weakens a test, and the tests Kiro repaired must pass again before
+#   anything is pushed; the ones it reports as product defects stay as they are. People review and merge the PR.
 name: Kiro repair
 run-name: ${{ inputs.run_key || format('Kiro repair {0}', inputs.incident) }}
 
@@ -76,7 +76,7 @@ jobs:
           args=()
           while IFS= read -r name; do [ -n "$name" ] && args+=(--test "$name"); done <<< "$TESTS"
           set +e
-          robot --outputdir results-before "${args[@]}" tests
+          robot --outputdir "$RUNNER_TEMP/results-before" "${args[@]}" tests   # outside the repo: not part of the diff
           code=$?
           set -e
           if [ "$code" -eq 0 ]; then
@@ -121,7 +121,9 @@ jobs:
 
       - name: Guard (test code fixed only; nothing added, removed or weakened)
         if: env.REPRODUCED == '1'
-        run: python ci/check_diff.py "$BASE" "$INCIDENT" --repair | tee "$RUNNER_TEMP/guard.txt"
+        run: |
+          set -o pipefail   # a REJECTED guard must fail the step, not be hidden by tee
+          python ci/check_diff.py "$BASE" "$INCIDENT" --repair | tee "$RUNNER_TEMP/guard.txt"
 
       - name: Check the suite parses
         if: env.REPRODUCED == '1'
@@ -132,13 +134,29 @@ jobs:
         env:
           TESTS: ${{ inputs.tests }}
         run: |
+          # Only the listed tests Kiro reports as "REPAIRED: <test>: …"; the ones it reports "NOT REPAIRED" (product
+          # defects) stay failing on purpose and are named in the PR comment.
+          python - <<'EOF'
+          import os
+          tmp = os.environ["RUNNER_TEMP"]
+          reply = [l.strip().lstrip("-* ") for l in open(f"{tmp}/kiro_reply.md", encoding="utf-8")]
+          tests = [t for t in os.environ["TESTS"].splitlines() if t.strip()]
+          done = [t for t in tests if any(l.startswith(f"REPAIRED: {t}:") for l in reply)]
+          open(f"{tmp}/repaired.txt", "w", encoding="utf-8").write("\n".join(done))
+          print(f"Kiro repaired {len(done)} of {len(tests)} listed tests: {done}")
+          EOF
+          if [ ! -s "$RUNNER_TEMP/repaired.txt" ]; then
+            echo "NONE_REPAIRED=1" >> "$GITHUB_ENV"
+            echo "::notice::Kiro repaired none of the tests (product defects only): nothing to verify or push."
+            exit 0
+          fi
           args=()
-          while IFS= read -r name; do [ -n "$name" ] && args+=(--test "$name"); done <<< "$TESTS"
+          while IFS= read -r name; do [ -n "$name" ] && args+=(--test "$name"); done < "$RUNNER_TEMP/repaired.txt"
           robot --outputdir results "${args[@]}" tests
           python ci/summary.py results/output.xml "$INCIDENT" > "$RUNNER_TEMP/results.md"
 
       - name: Push the repair to the pull request
-        if: env.REPRODUCED == '1'
+        if: env.REPRODUCED == '1' && env.NONE_REPAIRED != '1'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -163,6 +181,11 @@ jobs:
               echo
               echo "The repair re-ran them first and they passed, so Kiro was not started and nothing was pushed."
               echo "(The failure it was asked about may be from an older run.)"
+            elif [ "$STATUS" = "success" ] && [ -n "${NONE_REPAIRED:-}" ]; then
+              echo "## 🐞 No test defect to fix: the failures look like product defects"
+              echo
+              echo "Kiro checked each failing test against the live page and left them unchanged; nothing was pushed."
+              echo "The site needs a fix (or the expected value in the approved case is wrong): see Kiro's notes."
             elif [ "$STATUS" = "success" ] && [ -n "${NO_CHANGE:-}" ]; then
               echo "## ℹ️ The failing tests pass again without a change"
               echo
@@ -174,6 +197,12 @@ jobs:
               echo "the tests' intent, then merge."
               echo
               cat "$RUNNER_TEMP/results.md" 2>/dev/null
+              if grep "^NOT REPAIRED:" "$RUNNER_TEMP/kiro_reply.md" 2>/dev/null | grep -qvi "^NOT REPAIRED: *none"; then
+                echo
+                echo "### 🐞 Not repaired: product defects (these tests keep failing until the site is fixed)"
+                echo
+                grep "^NOT REPAIRED:" "$RUNNER_TEMP/kiro_reply.md" | grep -vi "^NOT REPAIRED: *none" | sed 's/^NOT REPAIRED: /- /'
+              fi
             else
               echo "## ⚠️ Kiro's repair was not pushed"
               echo
@@ -200,6 +229,6 @@ jobs:
           name: kiro-repair-results
           path: |
             results/
-            results-before/
+            ${{ runner.temp }}/results-before/
             ${{ runner.temp }}/kiro.jsonl
             ${{ runner.temp }}/task.md

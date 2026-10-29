@@ -97,7 +97,9 @@ jobs:
           python ci/kiro_summary.py "$RUNNER_TEMP/kiro.jsonl"
 
       - name: Guard (only new, tagged tests in tests/ and resources/)
-        run: python ci/check_diff.py origin/main "$INCIDENT" | tee "$RUNNER_TEMP/guard.txt"
+        run: |
+          set -o pipefail   # a REJECTED guard must fail the step, not be hidden by tee
+          python ci/check_diff.py origin/main "$INCIDENT" | tee "$RUNNER_TEMP/guard.txt"
 
       - name: Check the suite parses
         run: robot --dryrun --output NONE --report NONE --log NONE tests
