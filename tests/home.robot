@@ -25,3 +25,9 @@ Get Started Shows Install Command
     [Tags]    regression    REQ-100
     Wait Until Element Is Visible    id:get-started
     Page Should Contain    pip install robotframework
+
+Home Anchor Jump Respects Scroll Padding
+    [Documentation]    SIT-INCIDENT-2-04: A home page anchor jump scrolls to the section and keeps its heading
+    ...    visible below the sticky header, confirming the shared scroll-padding-top rule.
+    [Tags]    sit    INCIDENT-2    regression    REQ-100
+    Jump To Home Section    get-started

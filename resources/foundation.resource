@@ -6,6 +6,7 @@ Resource            common.resource
 *** Variables ***
 ${FOUNDATION_PATH}      /foundation/
 ${MEMBERS_SECTION}      id:foundation-members
+${HOW_TO_JOIN_SECTION}      how-to-join
 
 
 *** Keywords ***
@@ -30,3 +31,18 @@ Members Should Include
     [Arguments]    ${company}
     Wait Until Element Is Visible    ${MEMBERS_SECTION}
     Page Should Contain Element    xpath://h3[normalize-space()="${company}"]
+
+Jump To Section Via Menu
+    [Documentation]    Clicks the page menu link to #${section_id} and waits until that section is in view
+    ...    below the sticky header (scroll-padding-top keeps it from being hidden).
+    [Arguments]    ${section_id}
+    Click First Visible    css:nav[data-component="nav-top"] a[href="#${section_id}"]
+    Wait Until Location Contains    \#${section_id}
+    Section Should Be In View    ${section_id}
+
+How To Join Should Show Steps
+    [Documentation]    The How To Join section shows its four steps and the application form link.
+    Wait Until Element Is Visible    id:${HOW_TO_JOIN_SECTION}
+    ${steps}=    Get Element Count    css:#${HOW_TO_JOIN_SECTION} ol li
+    Should Be True    ${steps} >= 4    How To Join should list at least 4 steps
+    Page Should Contain Element    css:#${HOW_TO_JOIN_SECTION} a
