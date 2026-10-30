@@ -35,10 +35,16 @@ Members Should Include
 Jump To Section Via Menu
     [Documentation]    Clicks the page menu link to #${section_id} and waits until that section is in view
     ...    below the sticky header (scroll-padding-top keeps it from being hidden).
+    ...    Retries the click when it lands before the page finishes rendering and the URL doesn't change.
+    [Arguments]    ${section_id}
+    Wait Until Keyword Succeeds    3x    1s    Click Menu Link And Wait For Hash    ${section_id}
+    Section Should Be In View    ${section_id}
+
+Click Menu Link And Wait For Hash
+    [Documentation]    One attempt: clicks the page menu link to #${section_id} and waits for the URL to show it.
     [Arguments]    ${section_id}
     Click First Visible    css:nav[data-component="nav-top"] a[href="#${section_id}"]
-    Wait Until Location Contains    \#${section_id}
-    Section Should Be In View    ${section_id}
+    Wait Until Location Contains    \#${section_id}    timeout=4s
 
 How To Join Should Show Steps
     [Documentation]    The How To Join section shows its four steps and the application form link.
