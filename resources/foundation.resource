@@ -42,7 +42,8 @@ Jump To Section Via Menu
 
 How To Join Should Show Steps
     [Documentation]    The How To Join section shows its four steps and the application form link.
+    ...    The #how-to-join id is on the heading, so the steps and link live in the block after it.
     Wait Until Element Is Visible    id:${HOW_TO_JOIN_SECTION}
-    ${steps}=    Get Element Count    css:#${HOW_TO_JOIN_SECTION} ol li
+    ${steps}=    Get Element Count    xpath://*[@id="${HOW_TO_JOIN_SECTION}"]/following-sibling::div[1]//ol/li
     Should Be True    ${steps} >= 4    How To Join should list at least 4 steps
-    Page Should Contain Element    css:#${HOW_TO_JOIN_SECTION} a
+    Page Should Contain Element    xpath://*[@id="${HOW_TO_JOIN_SECTION}"]/following-sibling::div[1]//a
