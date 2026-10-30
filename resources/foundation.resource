@@ -6,7 +6,7 @@ Resource            common.resource
 *** Variables ***
 ${FOUNDATION_PATH}      /foundation/
 ${MEMBERS_SECTION}      id:foundation-members
-${HOW_TO_JOIN_SECTION}      how-to-join
+${HOW_TO_JOIN_SECTION}      howjoin
 
 
 *** Keywords ***
