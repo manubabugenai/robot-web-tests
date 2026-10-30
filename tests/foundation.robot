@@ -32,8 +32,8 @@ Join Link Jumps To How To Join
     [Tags]    sit    INCIDENT-2    regression    REQ-300
     Click Page Menu Link    how-to-join
     Section Should Be In View    how-to-join
-    Wait Until Page Contains    4 steps
-    Page Should Contain Element    css:#how-to-join a[href*="forms"]
+    How To Join Should Show Steps    4
+    How To Join Should Link To Application Form
 
 Join Heading Stays Below Sticky Header
     [Documentation]    SIT-INCIDENT-2-02: After jumping to How To Join, the heading is not hidden under the sticky header.

@@ -38,6 +38,25 @@ Click Page Menu Link
     Click First Visible    ${locator}
     Wait Until Location Contains    \#${section_id}
 
+How To Join Should Show Steps
+    [Documentation]    The How To Join section lists ${count} numbered steps in its body (the block after the heading).
+    [Arguments]    ${count}
+    ${steps}=    Set Variable    xpath://*[@id="how-to-join"]/following-sibling::div[1]//ol/li
+    Wait Until Element Is Visible    id:how-to-join
+    Wait Until Keyword Succeeds    5s    250ms    Element Count Should Be    ${steps}    ${count}
+
+Element Count Should Be
+    [Documentation]    Fails unless exactly ${count} elements match ${locator}.
+    [Arguments]    ${locator}    ${count}
+    ${found}=    Get Element Count    ${locator}
+    Should Be Equal As Integers    ${found}    ${count}
+
+How To Join Should Link To Application Form
+    [Documentation]    The How To Join section body links to the membership application form.
+    Wait Until Element Is Visible    id:how-to-join
+    Page Should Contain Element
+    ...    xpath://*[@id="how-to-join"]/following-sibling::div[1]//a[contains(@href, "forms")]
+
 Section Heading Should Not Be Hidden Under Header
     [Documentation]    The top of section #${section_id} sits at or below the sticky header, so its heading is not
     ...    covered. Uses the global scroll-padding-top (80px); allows a small tolerance.
