@@ -89,7 +89,7 @@ Application Form Link Target Should Be External
     ...    absolute http(s) URL (without submitting the form).
     Wait Until Element Is Visible    id:${JOIN_SECTION}
     ${locator}=    Set Variable
-    ...    xpath://*[@id="${JOIN_SECTION}"]//a[starts-with(@href, "http")]
+    ...    xpath://section[.//*[@id="${JOIN_SECTION}"]]//a[starts-with(@href, "http")]
     Wait Until Page Contains Element    ${locator}
     ${href}=    Get Element Attribute    ${locator}    href
     Should Match Regexp    ${href}    ^https?://    The application form link is not an absolute external URL
