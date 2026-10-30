@@ -30,3 +30,10 @@ Footer Should Link To
     [Documentation]    The page footer links to ${href}.
     [Arguments]    ${href}
     Page Should Contain Element    css:a[href="${href}"]
+
+Html Should Have Scroll Padding Top
+    [Documentation]    The shared global style applies scroll-padding-top to the html element (not "auto").
+    ${padding}=    Execute Javascript
+    ...    return getComputedStyle(document.documentElement).scrollPaddingTop;
+    Should Not Be Equal    ${padding}    auto    html has no scroll-padding-top
+    Should Not Be Equal    ${padding}    0px    html scroll-padding-top is 0px
