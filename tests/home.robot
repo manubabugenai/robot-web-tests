@@ -25,3 +25,9 @@ Get Started Shows Install Command
     [Tags]    regression    REQ-100
     Wait Until Element Is Visible    id:get-started
     Page Should Contain    pip install robotframework
+
+Home Page Scrolls With Global Scroll Padding
+    [Documentation]    SIT-INCIDENT-2-04: The home page loads normally with the shared scroll-padding-top applied to html.
+    [Tags]    sit    INCIDENT-2    regression    REQ-100
+    Element Should Be Visible    ${HOME_HERO}
+    Html Should Have Scroll Padding Top
