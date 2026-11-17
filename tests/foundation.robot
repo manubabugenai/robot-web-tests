@@ -26,3 +26,20 @@ Members List Includes ABB And Nokia
     [Tags]    regression    REQ-300
     Members Should Include    ABB
     Members Should Include    Nokia
+
+Join Link Jumps To How To Join
+    [Documentation]    SIT-INCIDENT-2-01: Join in the page menu jumps to How To Join with the heading below the sticky header.
+    [Tags]    sit    INCIDENT-2    REQ-300    regression
+    Page Menu Link Should Target    Join    how-to-join
+    Menu Link Should Jump To Section    Join
+    Section Should Be In View    how-to-join
+
+Other Page Menu Links Jump To Their Sections
+    [Documentation]    SIT-INCIDENT-2-02: Our Work, Benefits, Fees and Members menu links jump to their sections.
+    [Tags]    sit    INCIDENT-2    REQ-300    regression
+    Page Menu Link Should Target    Benefits    your-benefits-and-cost
+    Page Menu Link Should Target    Fees    annual-fee
+    Page Menu Link Should Target    Members    foundation-members
+    FOR    ${name}    IN    Our Work    Benefits    Fees    Members
+        Menu Link Should Jump To Section    ${name}
+    END

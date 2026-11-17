@@ -30,3 +30,27 @@ Members Should Include
     [Arguments]    ${company}
     Wait Until Element Is Visible    ${MEMBERS_SECTION}
     Page Should Contain Element    xpath://h3[normalize-space()="${company}"]
+
+Click Page Menu Link Named
+    [Documentation]    Clicks the Foundation page menu link with the text ${name} and returns the id of its target section.
+    [Arguments]    ${name}
+    ${locator}=    Set Variable    xpath://nav[@data-component="nav-top"]//a[starts-with(@href, "#")][normalize-space()="${name}"]
+    Wait Until Page Contains Element    ${locator}
+    ${href}=    Get Element Attribute    ${locator}    href
+    ${section_id}=    Evaluate    $href.split("#")[-1]
+    Click First Visible    ${locator}
+    RETURN    ${section_id}
+
+Menu Link Should Jump To Section
+    [Documentation]    Clicking the page menu link ${name} brings its section below the sticky header.
+    [Arguments]    ${name}
+    ${section_id}=    Click Page Menu Link Named    ${name}
+    Wait Until Location Contains    \#${section_id}
+    Section Should Be Below Sticky Header    ${section_id}
+
+Page Menu Link Should Target
+    [Documentation]    The page menu link with text ${name} points to #${section_id}.
+    [Arguments]    ${name}    ${section_id}
+    ${href}=    Get Element Attribute
+    ...    xpath://nav[@data-component="nav-top"]//a[starts-with(@href, "#")][normalize-space()="${name}"]    href
+    Should End With    ${href}    \#${section_id}

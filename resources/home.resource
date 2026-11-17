@@ -30,3 +30,14 @@ Footer Should Link To
     [Documentation]    The page footer links to ${href}.
     [Arguments]    ${href}
     Page Should Contain Element    css:a[href="${href}"]
+
+Open Home Section From Header
+    [Documentation]    Clicks the header link to /#${section_id} on the home page and waits until that section is below the sticky header.
+    [Arguments]    ${section_id}
+    Click First Visible    css:nav[data-component="nav-top"] a[href="/#${section_id}"]
+    Section Should Be Below Sticky Header    ${section_id}
+
+Go Back To Robot Framework From Header
+    [Documentation]    Clicks "Back to Robot Framework" in the header and waits for the home page.
+    Click First Visible    xpath://nav[@data-component="nav-top"]//a[@href="/"][contains(normalize-space(), "Back to Robot Framework")]
+    Wait Until Element Is Visible    ${HOME_HERO}

@@ -25,3 +25,12 @@ Get Started Shows Install Command
     [Tags]    regression    REQ-100
     Wait Until Element Is Visible    id:get-started
     Page Should Contain    pip install robotframework
+
+Home Page Anchor Jump Clears Sticky Header
+    [Documentation]    SIT-INCIDENT-2-04: The home page renders and a header anchor jump leaves the section heading below the sticky header.
+    [Tags]    sit    INCIDENT-2    REQ-100    regression
+    Title Should Be    Robot Framework
+    Element Should Be Visible    ${HOME_HERO}
+    Element Should Be Visible    ${NAV_TOP}
+    Open Home Section From Header    get-started
+    Page Should Contain    pip install robotframework

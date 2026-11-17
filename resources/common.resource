@@ -54,3 +54,17 @@ Click First Visible Once
     END
     Fail    No visible element matches ${locator}
     Fail    No visible element matches ${locator}
+
+Section Should Be Below Sticky Header
+    [Documentation]    Passes when the top of the element with id ${section_id} is below the 72px sticky header and inside the window. Waits for smooth scrolling to finish.
+    [Arguments]    ${section_id}
+    Wait Until Element Is Visible    id:${section_id}
+    Wait Until Keyword Succeeds    10s    250ms    Element Top Should Be Below Header    ${section_id}
+
+Element Top Should Be Below Header
+    [Documentation]    Fails unless the element top is at least 72px from the top of the window and above its bottom.
+    [Arguments]    ${section_id}
+    ${ok}=    Execute Javascript
+    ...    const r = document.getElementById("${section_id}").getBoundingClientRect();
+    ...    return r.top >= 72 && r.top < window.innerHeight;
+    Should Be True    ${ok}    Section "${section_id}" is hidden under the sticky header or out of view
