@@ -30,3 +30,9 @@ Footer Should Link To
     [Documentation]    The page footer links to ${href}.
     [Arguments]    ${href}
     Page Should Contain Element    css:a[href="${href}"]
+
+Open Home Page At Anchor
+    [Documentation]    Opens the home page with the URL hash #${section_id} and waits for that section.
+    [Arguments]    ${section_id}
+    Go To    ${BASE_URL}/#${section_id}
+    Wait Until Element Is Visible    id:${section_id}

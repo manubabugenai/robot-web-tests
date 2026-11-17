@@ -25,3 +25,9 @@ Get Started Shows Install Command
     [Tags]    regression    REQ-100
     Wait Until Element Is Visible    id:get-started
     Page Should Contain    pip install robotframework
+
+Home Anchor Target Is Not Hidden By Sticky Header
+    [Documentation]    SIT-INCIDENT-2-04: An anchor target on the home page sits below the sticky header.
+    [Tags]    sit    INCIDENT-2    REQ-100    regression
+    Open Home Page At Anchor    get-started
+    Section Should Be Below Sticky Header    get-started

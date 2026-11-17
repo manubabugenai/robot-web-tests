@@ -33,6 +33,21 @@ Element Top Should Be In Viewport
     ...    return r.top >= -5 && r.top < window.innerHeight;
     Should Be True    ${in_view}    Section "${section_id}" is not in view
 
+Section Should Be Below Sticky Header
+    [Documentation]    Passes when the top of the element with id ${section_id} is at or below the 72px sticky header
+    ...    and still inside the window. Retries while the smooth scroll finishes.
+    [Arguments]    ${section_id}
+    Wait Until Element Is Visible    id:${section_id}
+    Wait Until Keyword Succeeds    10s    250ms    Element Top Should Be Below Header    ${section_id}
+
+Element Top Should Be Below Header
+    [Documentation]    Fails unless the element top is between 72px and the bottom of the window.
+    [Arguments]    ${section_id}
+    ${ok}=    Execute Javascript
+    ...    const r = document.getElementById("${section_id}").getBoundingClientRect();
+    ...    return r.top >= 72 && r.top < window.innerHeight;
+    Should Be True    ${ok}    Section "${section_id}" is hidden under the sticky header or out of view
+
 Click First Visible
     [Documentation]    Clicks the first visible element matching ${locator}. The site repeats some links in a hidden
     ...    mobile menu, so the first match in the page is not always the one a user can click. Retries when the

@@ -19,6 +19,24 @@ Page Menu Link
     [Arguments]    ${section_id}
     RETURN    css:nav[data-component="nav-top"] a[href="#${section_id}"]
 
+Click Page Menu Link Named
+    [Documentation]    Clicks the Foundation page menu link with the text ${name} and returns the section id it targets.
+    [Arguments]    ${name}
+    ${locator}=    Set Variable
+    ...    xpath://nav[@data-component="nav-top"]//a[starts-with(@href, "#")][normalize-space()="${name}"]
+    Wait Until Page Contains Element    ${locator}
+    ${href}=    Get Element Attribute    ${locator}    href
+    ${section_id}=    Evaluate    $href.split("#")[-1]
+    Click First Visible    ${locator}
+    RETURN    ${section_id}
+
+Menu Link Should Jump To Section
+    [Documentation]    Clicking the menu link ${name} brings its target section into view and updates the URL hash.
+    [Arguments]    ${name}
+    ${section_id}=    Click Page Menu Link Named    ${name}
+    Wait Until Location Contains    \#${section_id}
+    Section Should Be In View    ${section_id}
+
 Fee Table Should Show
     [Documentation]    The Annual fee table shows the amount ${amount}.
     [Arguments]    ${amount}
